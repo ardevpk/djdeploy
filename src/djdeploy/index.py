@@ -28,10 +28,8 @@ def is_git_repo(repository):
 
 
 def showPrint(stdout, stderr):
-    for line in stdout.readlines():
-        print(line.strip())
-    for line in stderr:
-        print(line.strip())
+    for line in stdout.readlines(): print(line.strip())
+    for line in stderr: print(line.strip())
 
 
 def pemDeployment():
@@ -39,39 +37,49 @@ def pemDeployment():
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         host = input('Please enter your server host name ( Public IPV4 Address)\n> ')
-        # username = input('Please enter your server username: ')
-        username = 'ubuntu'
+        username = input('Please enter your server username: ')
         key_file = str(openFile())
         print('Connecting...')
         ssh.connect(host, username=username, key_filename=key_file)
         print('Connected!')
 
-        repo = 'https://github.com/abdullahafzal/bumi'
-        token = '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'
-        # repo = input('Git Repo Link: ')
-        # token = input('Git Token: ')
+        repo = input('Git Repo Link: ')
+        token = input('Git Token: ')
         repository = repo.replace('https://', f'https://{token}@')
         repo = is_git_repo(repository)
         if repo == True:
             branch = input('Please also specify branch name: ')
-        else: raise Exception
+        else:
+            print('Invalid git details!')
+            exit()
         folder_name = repository.split('/')[-1].replace('.git', '')
+
+        print('Cloning git repo\'s on server!')
         stdin, stdout, stderr = ssh.exec_command(f'git clone -b {branch} {repository} && mv {folder_name}/ project && git clone https://{token}@github.com/ardevpk/setup.git ')
         showPrint(stdout, stderr)
+        print('Cloning completed!')
 
+        print('Executing scripts on server!')
+        print('It takes a little bit of time, So you can a grab a cup of coffee!')
         stdin, stdout, stderr = ssh.exec_command(f'sudo python3 ./setup/main.py')
         showPrint(stdout, stderr)
+        print('Execution completed!')
 
+        print('Restarting...')
         stdin, stdout, stderr = ssh.exec_command(f'./restart.sh')
         showPrint(stdout, stderr)
-
+        print('Restarted!')
         ssh.close()
-
         print('Opening...')
         time.sleep(2)
-        webbrowser.open(f'http://{host}')
+        if input('Wants to open host in browser?\n(Y/n): ').lower()=='y':
+            webbrowser.open(f'http://{host}')
 
-        # os.system(f'ssh -i {key_file} {username}@{host}')
+        if input('Wants to connect to server?\n(Y/n): ').lower()=='y':
+            os.system(f'ssh -i {key_file} {username}@{host}')
+        else:
+            print('Thanks for using the djdeploy!')
+            exit()
 
     except Exception as err:
         print('Error: ', err.__class__.__name__)
@@ -90,7 +98,6 @@ def passwordDeployment():
 
         repo = input('Git Repo Link: ')
         token = input('Git Token: ')
-        # token = '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'
         repository = repo.replace('https://', f'https://{token}@')
         repo = is_git_repo(repository)
         if repo == True:
@@ -98,30 +105,34 @@ def passwordDeployment():
         else: raise Exception
 
         folder_name = repository.split('/')[-1].replace('.git', '')
+        
+        print('Cloning git repo\'s on server!')
         stdin, stdout, stderr = ssh.exec_command(f'git clone -b {branch} {repository} && mv {folder_name}/ project && git clone https://{token}@github.com/ardevpk/setup.git ')
         showPrint(stdout, stderr)
+        print('Cloning completed!')
 
-        # stdin, stdout, stderr = ssh.exec_command(f'sudo python3 setup/main.py')
-        # showPrint(stdout, stderr)
-
+        print('Executing scripts on server!')
         ssh.close()
 
 
         def openSystem():
-            os.system(f'ssh {username}@{host}')
+            os.system(f'ssh {username}@{host} sudo python3 setup/main.py')
 
         thread = Thread(target=openSystem, args=())
         thread.start()
         time.sleep(3)
         pyautogui.write(str(password))
         pyautogui.press('enter')
-        time.sleep(3)
-        pyautogui.write('sudo python3 setup/main.py')
-        pyautogui.press('enter')
 
-        # print('Opening...')
-        # time.sleep(3)
-        # webbrowser.open(f'http://{host}')
+        while True:
+            if not thread.is_alive():
+                print('Execution completed!')
+                if input('Wants to open host in browser?\n(Y/n): ').lower()=='y':
+                    webbrowser.open(f'http://{host}')
+                    break
+        
+        print('Thanks for using the djdeploy!')
+        exit()
 
     except Exception as err:
         print('Error: ', err.__class__.__name__)
@@ -144,44 +155,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-"""
-
-# def changeHost(host):
-#     with open('setup/scripts/django.conf', 'r') as f:
-#         lines = f.readlines()
-#         hash =  'server_name'
-#         for count, line in enumerate(lines):
-#             if hash in line:
-#                 lines[count] = f' server_name {host};\n'
-#         with open('setup/scripts/django.conf', 'w') as g:
-#             g.writelines(lines)
-
-
-
-# print('Error: ', err)
-
-
-
-# repo = 'https://github.com/ardevpk/todo.git'
-# token = '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'
-
-
-# host = '52.69.28.28'
-# username = input('Please enter your server username: ')
-# changeHost(host)
-
-
-# def openSystem():
-#     os.system(f'ssh -i "{key_file}" {username}@{host}')
-
-# thread = Thread(target=openSystem, args=())
-# thread.start()
-# time.sleep(3)
-# pyautogui.write('sudo python3 setup/main.py')
-# pyautogui.press('enter')
-# time.sleep(3)
-"""

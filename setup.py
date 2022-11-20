@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='djdeploy',
-    version='0.0.2',
+    version='0.0.4',
     description='Django automate deployment',
     long_description=long_description,
     long_description_content_type="text/markdown",
